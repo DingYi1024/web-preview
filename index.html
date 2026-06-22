@@ -3,327 +3,1424 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>网页代码预览器</title>
+    <title>公众号文章对比预览器</title>
     <style>
+        :root {
+            --bg: #121927;
+            --panel: #162133;
+            --panel-soft: #1b2740;
+            --line: #243654;
+            --line-soft: #1e2c46;
+            --text: #edf2ff;
+            --muted: #8192b3;
+            --accent: #e94560;
+            --primary: #4d8eff;
+            --success: #38a169;
+            --danger: #7c2d3f;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html,
+        body {
+            height: 100%;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
-            height: 100vh;
+            background: var(--bg);
+            color: var(--text);
             display: flex;
             flex-direction: column;
         }
 
         header {
-            background: #16213e;
-            padding: 16px 24px;
+            height: 56px;
+            padding: 0 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid #0f3460;
+            gap: 12px;
+            background: #111827;
+            border-bottom: 1px solid var(--line);
+            flex-shrink: 0;
         }
 
-        header h1 {
-            font-size: 18px;
+        .brand {
+            min-width: 0;
+        }
+
+        .brand h1 {
+            font-size: 17px;
             font-weight: 600;
-            color: #e94560;
+            color: var(--text);
+            line-height: 1.1;
+        }
+
+        .brand p {
+            margin-top: 3px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .status {
+            font-size: 11px;
+            color: var(--muted);
+            white-space: nowrap;
         }
 
         .controls {
             display: flex;
-            gap: 12px;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        /* 美化全局滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--line);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
         }
 
         button {
-            padding: 8px 16px;
             border: none;
-            border-radius: 6px;
+            border-radius: 7px;
+            padding: 7px 10px;
+            font-size: 12px;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .btn-run {
-            background: #e94560;
             color: white;
+            transition: background 0.2s ease, opacity 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
         }
 
-        .btn-run:hover {
-            background: #ff6b6b;
+        button:hover {
+            opacity: 0.96;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .btn-clear {
-            background: #0f3460;
-            color: #eee;
+        button:active {
+            transform: translateY(0);
         }
 
-        .btn-clear:hover {
-            background: #1a4a7a;
+        .btn-secondary {
+            background: #30435f;
         }
 
-        .btn-paste {
-            background: #533483;
-            color: white;
+        .btn-primary {
+            background: var(--primary);
         }
 
-        .btn-paste:hover {
-            background: #6b44a0;
+        .btn-success {
+            background: var(--success);
         }
 
-        .container {
+        .app {
             flex: 1;
-            display: flex;
-            overflow: hidden;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 8px;
+            padding: 8px;
         }
 
-        .editor-section, .preview-section {
-            flex: 1;
+        .draft-sidebar {
+            min-height: 0;
             display: flex;
             flex-direction: column;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 10px;
             overflow: hidden;
-            transition: flex 0.3s ease;
         }
 
-        .editor-section {
-            border-right: 1px solid #0f3460;
+        .sidebar-head {
+            padding: 10px;
+            border-bottom: 1px solid var(--line);
+            font-size: 12px;
+            color: var(--muted);
         }
 
-        .section-header {
-            background: #16213e;
-            padding: 12px 16px;
-            font-size: 13px;
-            color: #888;
-            border-bottom: 1px solid #0f3460;
+        .draft-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .draft-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .draft-group-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 8px;
+            padding: 4px 4px 2px;
+            font-size: 10px;
+            color: var(--muted);
             cursor: pointer;
             user-select: none;
         }
 
-        .section-header:active {
-            background: #1a2a4a;
+        .draft-group-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .collapse-icon {
-            transition: transform 0.3s ease;
+        .draft-group-count {
+            flex-shrink: 0;
+        }
+
+        .draft-group-items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .draft-empty {
+            padding: 10px 8px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .draft-item {
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--line-soft);
+            background: var(--panel-soft);
+            cursor: pointer;
+        }
+
+        .draft-item-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .draft-item.active {
+            border-color: var(--accent);
+            background: #2b2438;
+        }
+
+        .draft-item-title {
+            font-size: 11px;
+            line-height: 1.4;
+            color: var(--text);
+            word-break: break-word;
+        }
+
+        .draft-delete {
+            flex-shrink: 0;
+            border: none;
+            border-radius: 5px;
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+        }
+
+        .draft-delete:hover {
+            background: rgba(233, 69, 96, 0.14);
+            color: #ffc3cc;
+            opacity: 1;
+        }
+
+        .draft-delete svg {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+            pointer-events: none;
+        }
+
+        .draft-item-meta {
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .draft-item-time {
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        .draft-score {
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: #2b3d5f;
+            color: #cfe1ff;
+            font-size: 10px;
+            line-height: 1;
+        }
+
+        .workspace {
+            min-width: 0;
+            min-height: 0;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .meta-bar {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--line);
+            display: grid;
+            grid-template-columns: minmax(140px, 1fr) 86px 160px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .meta-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .meta-field label {
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        input,
+        select {
+            width: 100%;
+            border: none;
+            outline: none;
+            border-radius: 7px;
+            background: #0f1624;
+            color: var(--text);
+            padding: 8px 10px;
             font-size: 12px;
         }
 
-        .section-header.collapsed .collapse-icon {
-            transform: rotate(-90deg);
+        .workspace-body {
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 34% 1fr;
         }
 
-        .section-content {
-            flex: 1;
+        body.editor-hidden .workspace-body {
+            grid-template-columns: 0 1fr;
+        }
+
+        .editor-pane {
+            min-width: 0;
+            min-height: 0;
+            border-right: 1px solid var(--line);
+            display: flex;
+        }
+
+        body.editor-hidden .editor-pane {
+            border-right: none;
             overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .editor-section.collapsed .section-content,
-        .preview-section.collapsed .section-content {
-            max-height: 0;
-            flex: 0;
         }
 
         textarea {
             flex: 1;
             width: 100%;
-            height: 100%;
-            background: #0f0f1a;
-            color: #d4d4d4;
+            min-height: 0;
             border: none;
-            padding: 16px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            resize: none;
             outline: none;
+            resize: none;
+            background: #0f1624;
+            color: #dbe4f5;
+            padding: 12px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.55;
         }
 
         textarea::placeholder {
-            color: #555;
+            color: #5f6f8f;
         }
 
-        .preview-section {
+        .preview-pane {
+            min-width: 0;
+            min-height: 0;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        .preview-top {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .preview-grid {
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .preview-grid.single {
+            grid-template-columns: 1fr;
+        }
+
+        .frame-pane {
+            min-width: 0;
+            min-height: 0;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        .frame-pane + .frame-pane {
+            border-left: 1px solid var(--line);
+        }
+
+        .frame-label {
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--line);
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        .frame-wrap {
+            min-height: 0;
             background: white;
         }
 
-        .preview-section .section-header {
-            background: #16213e;
-            color: #888;
-        }
-
         iframe {
-            flex: 1;
             width: 100%;
             height: 100%;
             border: none;
             background: white;
         }
 
-        /* 移动端：上下布局 + 可收起 */
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-                height: calc(100vh - 56px);
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 980px) {
+            .workspace-body {
+                grid-template-columns: 1fr;
+                grid-template-rows: 260px 1fr;
             }
 
-            .editor-section, .preview-section {
-                flex: 1;
-                min-height: 0;
-                overflow: hidden;
+            body.editor-hidden .workspace-body {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr;
             }
 
-            .editor-section {
+            .editor-pane {
                 border-right: none;
-                border-bottom: 1px solid #0f3460;
+                border-bottom: 1px solid var(--line);
             }
 
+            body.editor-hidden .editor-pane {
+                display: none;
+            }
+
+            .meta-bar {
+                grid-template-columns: 1fr 88px;
+            }
+
+            .meta-field.compare-field {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 768px) {
             header {
-                padding: 12px 16px;
-                flex-shrink: 0;
+                height: auto;
+                padding: 10px;
+                flex-direction: column;
+                align-items: stretch;
             }
 
-            header h1 {
-                font-size: 16px;
+            .header-actions {
+                flex-direction: column;
+                align-items: stretch;
             }
 
             .controls {
-                gap: 8px;
+                justify-content: flex-start;
             }
 
-            button {
-                padding: 10px 14px;
-                font-size: 13px;
+            .app {
+                grid-template-columns: 1fr;
             }
 
-            textarea {
-                font-size: 13px;
+            .draft-sidebar {
+                max-height: 130px;
             }
 
-            .section-header {
-                padding: 10px 16px;
+            .preview-grid {
+                grid-template-columns: 1fr;
             }
 
-            .editor-section.collapsed,
-            .preview-section.collapsed {
-                flex: 0;
-                min-height: 44px;
+            .frame-pane + .frame-pane {
+                border-left: none;
+                border-top: 1px solid var(--line);
             }
-        }
-
-        /* 平板横屏微调 */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .editor-section, .preview-section {
-                flex: 1;
-            }
-        }
-
-        .empty-hint {
-            color: #999;
-            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>⚡ 网页代码预览器</h1>
-        <div class="controls">
-            <button class="btn-paste" onclick="pasteCode()">📋 粘贴</button>
-            <button class="btn-clear" onclick="clearCode()">清空</button>
-            <button class="btn-run" onclick="runCode()">运行代码</button>
+        <div class="brand">
+            <h1>公众号文章对比预览器</h1>
+            <p>草稿箱 + 预览优先</p>
+        </div>
+
+        <div class="header-actions">
+            <div class="status" id="statusText">准备中</div>
+            <div class="controls">
+                <button class="btn-secondary" type="button" onclick="createBlankDraft()">新稿</button>
+                <button class="btn-secondary" type="button" onclick="createDraftFromClipboard()">剪贴板新稿</button>
+                <button class="btn-secondary" type="button" id="editorToggleBtn" onclick="toggleEditor()">隐藏源码</button>
+                <button class="btn-primary" type="button" id="compareToggleBtn" onclick="toggleCompareMode()">对比</button>
+                <button class="btn-success" type="button" onclick="copyCurrentDraft()">复制当前</button>
+                <button class="btn-secondary" type="button" onclick="exportCurrentDraft()">导出 HTML</button>
+            </div>
         </div>
     </header>
 
-    <div class="container">
-        <div class="editor-section" id="editorSection">
-            <div class="section-header" onclick="toggleSection('editorSection')">
-                <span>📝 代码编辑</span>
-                <span class="collapse-icon">▼</span>
+    <div class="app">
+        <aside class="draft-sidebar">
+            <div class="sidebar-head" id="sidebarHead">草稿箱</div>
+            <div class="draft-list" id="draftList">
+                <div class="draft-empty">正在读取草稿…</div>
             </div>
-            <div class="section-content">
-                <textarea id="codeInput" placeholder="<!DOCTYPE html>
+        </aside>
+
+        <main class="workspace">
+            <div class="meta-bar">
+                <div class="meta-field">
+                    <label for="draftTitleInput">标题</label>
+                    <input id="draftTitleInput" type="text" placeholder="未命名草稿">
+                </div>
+
+                <div class="meta-field">
+                    <label for="draftScoreInput">AI分</label>
+                    <input id="draftScoreInput" type="number" step="0.1" min="0" placeholder="-">
+                </div>
+
+                <div class="meta-field compare-field hidden" id="compareField">
+                    <label for="compareDraftSelect">对比稿</label>
+                    <select id="compareDraftSelect"></select>
+                </div>
+            </div>
+
+            <div class="workspace-body">
+                <section class="editor-pane" id="editorPane">
+                    <textarea id="codeInput" spellcheck="false" placeholder="<!DOCTYPE html>
 <html>
 <head>
+    <meta charset=&quot;UTF-8&quot;>
+    <title>文章标题</title>
     <style>
-        /* 在这里写 CSS */
+        body { max-width: 760px; margin: 40px auto; line-height: 1.8; font-family: serif; }
     </style>
 </head>
 <body>
-    <!-- 在这里写 HTML -->
-    <script>
-        // 在这里写 JavaScript
-    </script>
+    <h1>文章标题</h1>
+    <p>把 AI 生成的整篇 HTML 粘贴到这里。</p>
+    &lt;script&gt;
+        // 可选脚本
+    &lt;/script&gt;
 </body>
 </html>"></textarea>
-            </div>
-        </div>
+                </section>
 
-        <div class="preview-section" id="previewSection">
-            <div class="section-header" onclick="toggleSection('previewSection')">
-                <span>📺 预览效果 <span style="color:#e94560">(实时)</span></span>
-                <span class="collapse-icon">▼</span>
+                <section class="preview-pane">
+                    <div class="preview-top">
+                        <span id="previewStatus">当前预览</span>
+                        <span id="compareStatus">未开启对比</span>
+                    </div>
+
+                    <div class="preview-grid single" id="previewGrid">
+                        <div class="frame-pane">
+                            <div class="frame-label" id="currentFrameLabel">当前稿</div>
+                            <div class="frame-wrap">
+                                <iframe id="previewFrame" sandbox="allow-scripts allow-modals"></iframe>
+                            </div>
+                        </div>
+
+                        <div class="frame-pane hidden" id="comparePane">
+                            <div class="frame-label" id="compareFrameLabel">对比稿</div>
+                            <div class="frame-wrap">
+                                <iframe id="compareFrame" sandbox="allow-scripts allow-modals"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
-            <div class="section-content">
-                <iframe id="previewFrame"></iframe>
-            </div>
-        </div>
+        </main>
     </div>
 
     <script>
-        const codeInput = document.getElementById('codeInput');
-        const previewFrame = document.getElementById('previewFrame');
-        let debounceTimer;
+        const STORAGE_KEY = 'article-preview-drafts-v2';
+        const EXPORT_DB_NAME = 'article-preview-export-db';
+        const EXPORT_DB_VERSION = 2;
+        const EXPORT_STORE = 'handles';
+        const EXPORT_HANDLE_KEY = 'base-directory';
+        const STATE_STORE = 'states';
+        const STATE_KEY = 'draft-state';
+        const EXPORT_SUBDIR = 'exports';
+        const EMPTY_PREVIEW_HTML = '<html><body style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5;color:#8a8a8a;font-family:sans-serif;"><div>请先粘贴或新建一篇文章</div></body></html>';
+        const DEFAULT_TEMPLATE = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>未命名草稿</title>
+    <style>
+        body {
+            max-width: 760px;
+            margin: 40px auto;
+            padding: 0 20px;
+            color: #222;
+            line-height: 1.9;
+            font-family: "Noto Serif SC", Georgia, serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>未命名草稿</h1>
+    <p>这是新的文章草稿。</p>
+</body>
+</html>`;
 
-        function toggleSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            const isMobile = window.innerWidth <= 768;
-            if (isMobile) {
-                section.classList.toggle('collapsed');
+        const state = {
+            drafts: [],
+            currentDraftId: null,
+            compareDraftId: null,
+            compareMode: false,
+            editorVisible: true,
+            saveTimer: null
+        };
+        const groupExpanded = {};
+
+        const draftList = document.getElementById('draftList');
+        const sidebarHead = document.getElementById('sidebarHead');
+        const statusText = document.getElementById('statusText');
+        const draftTitleInput = document.getElementById('draftTitleInput');
+        const draftScoreInput = document.getElementById('draftScoreInput');
+        const compareField = document.getElementById('compareField');
+        const compareDraftSelect = document.getElementById('compareDraftSelect');
+        const codeInput = document.getElementById('codeInput');
+        const previewGrid = document.getElementById('previewGrid');
+        const previewFrame = document.getElementById('previewFrame');
+        const comparePane = document.getElementById('comparePane');
+        const compareFrame = document.getElementById('compareFrame');
+        const previewStatus = document.getElementById('previewStatus');
+        const compareStatus = document.getElementById('compareStatus');
+        const currentFrameLabel = document.getElementById('currentFrameLabel');
+        const compareFrameLabel = document.getElementById('compareFrameLabel');
+        const editorToggleBtn = document.getElementById('editorToggleBtn');
+        const compareToggleBtn = document.getElementById('compareToggleBtn');
+        let exportDbPromise = null;
+
+        function supportsFileSystemAccess() {
+            return typeof window.showDirectoryPicker === 'function';
+        }
+
+        function openExportDb() {
+            if (exportDbPromise) {
+                return exportDbPromise;
+            }
+
+            exportDbPromise = new Promise((resolve, reject) => {
+                const request = indexedDB.open(EXPORT_DB_NAME, EXPORT_DB_VERSION);
+
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(EXPORT_STORE)) {
+                        db.createObjectStore(EXPORT_STORE);
+                    }
+                    if (!db.objectStoreNames.contains(STATE_STORE)) {
+                        db.createObjectStore(STATE_STORE);
+                    }
+                };
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+
+            return exportDbPromise;
+        }
+
+        function getPersistableState() {
+            return {
+                drafts: state.drafts,
+                currentDraftId: state.currentDraftId,
+                compareDraftId: state.compareDraftId,
+                compareMode: state.compareMode,
+                editorVisible: state.editorVisible
+            };
+        }
+
+        async function readIndexedDbState() {
+            try {
+                const db = await openExportDb();
+                return await new Promise((resolve, reject) => {
+                    const tx = db.transaction(STATE_STORE, 'readonly');
+                    const store = tx.objectStore(STATE_STORE);
+                    const request = store.get(STATE_KEY);
+                    request.onsuccess = () => resolve(request.result || null);
+                    request.onerror = () => reject(request.error);
+                });
+            } catch (error) {
+                return null;
             }
         }
 
-        function runCode() {
-            const code = codeInput.value;
-            if (!code.trim()) {
-                previewFrame.srcdoc = '<html><body style="display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5;color:#999;font-family:sans-serif;"><div>👈 请在左侧粘贴代码</div></body></html>';
+        async function writeIndexedDbState(snapshot) {
+            const db = await openExportDb();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(STATE_STORE, 'readwrite');
+                const store = tx.objectStore(STATE_STORE);
+                const request = store.put(snapshot, STATE_KEY);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function getStoredExportDirectoryHandle() {
+            if (!supportsFileSystemAccess()) {
+                return null;
+            }
+
+            try {
+                const db = await openExportDb();
+                return await new Promise((resolve, reject) => {
+                    const tx = db.transaction(EXPORT_STORE, 'readonly');
+                    const store = tx.objectStore(EXPORT_STORE);
+                    const request = store.get(EXPORT_HANDLE_KEY);
+                    request.onsuccess = () => resolve(request.result || null);
+                    request.onerror = () => reject(request.error);
+                });
+            } catch (error) {
+                return null;
+            }
+        }
+
+        async function setStoredExportDirectoryHandle(handle) {
+            if (!supportsFileSystemAccess()) {
                 return;
             }
-            previewFrame.srcdoc = code;
+
+            const db = await openExportDb();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(EXPORT_STORE, 'readwrite');
+                const store = tx.objectStore(EXPORT_STORE);
+                const request = store.put(handle, EXPORT_HANDLE_KEY);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
         }
 
-        function clearCode() {
-            codeInput.value = '';
-            runCode();
-            codeInput.focus();
+        async function clearStoredExportDirectoryHandle() {
+            if (!supportsFileSystemAccess()) {
+                return;
+            }
+
+            const db = await openExportDb();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(EXPORT_STORE, 'readwrite');
+                const store = tx.objectStore(EXPORT_STORE);
+                const request = store.delete(EXPORT_HANDLE_KEY);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
         }
 
-        async function pasteCode() {
+        async function ensureDirectoryPermission(handle) {
+            if (!handle || typeof handle.queryPermission !== 'function') {
+                return false;
+            }
+
+            const options = { mode: 'readwrite' };
+            const current = await handle.queryPermission(options);
+
+            if (current === 'granted') {
+                return true;
+            }
+
+            const requested = await handle.requestPermission(options);
+            return requested === 'granted';
+        }
+
+        async function pickExportBaseDirectory() {
+            const handle = await window.showDirectoryPicker({
+                mode: 'readwrite'
+            });
+            await setStoredExportDirectoryHandle(handle);
+            return handle;
+        }
+
+        async function getExportBaseDirectoryHandle() {
+            if (!supportsFileSystemAccess()) {
+                return null;
+            }
+
+            let handle = await getStoredExportDirectoryHandle();
+
+            if (handle) {
+                try {
+                    if (await ensureDirectoryPermission(handle)) {
+                        return handle;
+                    }
+                } catch (error) {
+                    await clearStoredExportDirectoryHandle();
+                }
+            }
+
+            return pickExportBaseDirectory();
+        }
+
+        async function exportToProjectFolder(current) {
+            const baseHandle = await getExportBaseDirectoryHandle();
+
+            if (!baseHandle) {
+                return false;
+            }
+
+            const exportDirHandle = await baseHandle.getDirectoryHandle(EXPORT_SUBDIR, { create: true });
+            const fileName = `${slugifyName(current.title || '未命名草稿')}.html`;
+            const fileHandle = await exportDirHandle.getFileHandle(fileName, { create: true });
+            const writable = await fileHandle.createWritable();
+
+            await writable.write(current.code);
+            await writable.close();
+            const writtenFile = await fileHandle.getFile();
+
+            if (!writtenFile || (current.code.trim() && writtenFile.size === 0)) {
+                throw new Error('导出文件写入失败');
+            }
+
+            statusText.textContent = `已导出到 ${EXPORT_SUBDIR}/${fileName}`;
+            return true;
+        }
+
+        function downloadCurrentDraft(current) {
+            const blob = new Blob([current.code], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.download = `${slugifyName(current.title || '未命名草稿')}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function generateId() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return window.crypto.randomUUID();
+            }
+
+            return `draft-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        }
+
+        function slugifyName(title) {
+            const cleaned = String(title || '未命名草稿')
+                .replace(/[\\/:*?"<>|]/g, ' ')
+                .trim()
+                .replace(/\s+/g, '-');
+
+            return cleaned || '未命名草稿';
+        }
+
+        function extractTitle(code) {
+            if (!code) return '未命名草稿';
             try {
-                const text = await navigator.clipboard.readText();
-                codeInput.value = text;
-                runCode();
-            } catch (err) {
-                alert('粘贴失败，请手动粘贴');
+                // 1. 优先从注释 MOVIE_TITLE 匹配
+                const commentMatch = String(code).match(/MOVIE_TITLE\s*:\s*([^\n\r<>]+)/i);
+                if (commentMatch && commentMatch[1]) {
+                    return commentMatch[1].trim();
+                }
+
+                // 2. 匹配 meta 标签
+                const metaMatch = String(code).match(/<meta\s+name=["'](movie-title|film-title)["']\s+content=["']([^"']+)["']/i);
+                if (metaMatch && metaMatch[2]) {
+                    return metaMatch[2].trim();
+                }
+
+                // 3. 匹配 title 标签
+                const titleMatch = String(code).match(/<title>([^<]+)<\/title>/i);
+                if (titleMatch && titleMatch[1]) {
+                    return titleMatch[1].trim();
+                }
+
+                // 4. 匹配 h1 标签
+                const h1Match = String(code).match(/<h1>([^<]+)<\/h1>/i);
+                if (h1Match && h1Match[1]) {
+                    return h1Match[1].trim();
+                }
+
+                return '未命名草稿';
+            } catch (error) {
+                return '未命名草稿';
             }
         }
 
-        // 实时预览（防抖）
-        codeInput.addEventListener('input', () => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(runCode, 300);
+        function normalizeScore(value) {
+            if (value === '' || value === null || value === undefined) {
+                return null;
+            }
+
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        function formatTime(timestamp) {
+            return new Date(timestamp).toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatDateKey(timestamp) {
+            const date = new Date(timestamp);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getTodayKey() {
+            return formatDateKey(Date.now());
+        }
+
+        function formatGroupLabel(dateKey) {
+            if (dateKey === getTodayKey()) {
+                return '今天';
+            }
+
+            return dateKey.slice(5);
+        }
+
+        function getTextLength(code) {
+            if (!code) return 0;
+            try {
+                const cleanText = String(code)
+                    .replace(/<!--[\s\S]*?-->/g, '')             // 移除注释
+                    .replace(/<script[\s\S]*?<\/script>/gi, '')   // 移除脚本
+                    .replace(/<style[\s\S]*?<\/style>/gi, '')     // 移除样式
+                    .replace(/<[^>]+>/g, '');                    // 移除HTML标签
+                return cleanText.replace(/\s+/g, '').length;
+            } catch (error) {
+                return 0;
+            }
+        }
+
+        function createDraft(code = DEFAULT_TEMPLATE) {
+            const now = Date.now();
+            return {
+                id: generateId(),
+                title: extractTitle(code),
+                titleManual: false,
+                score: null,
+                code,
+                createdAt: now,
+                updatedAt: now
+            };
+        }
+
+        function getCurrentDraft() {
+            return state.drafts.find((draft) => draft.id === state.currentDraftId) || null;
+        }
+
+        function getCompareDraft() {
+            return state.drafts.find((draft) => draft.id === state.compareDraftId) || null;
+        }
+
+        async function saveState(message = '已保存') {
+            try {
+                await writeIndexedDbState(getPersistableState());
+                statusText.textContent = message;
+            } catch (error) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(getPersistableState()));
+                    statusText.textContent = `${message} · 已用兼容存储`;
+                } catch (fallbackError) {
+                    statusText.textContent = '保存失败：浏览器存储空间不足，请先导出重要草稿';
+                }
+            }
+
+            renderSidebarHead();
+        }
+
+        function scheduleSave(message = '已自动保存') {
+            clearTimeout(state.saveTimer);
+            state.saveTimer = setTimeout(() => saveState(message), 300);
+        }
+
+        async function loadState() {
+            try {
+                let saved = await readIndexedDbState();
+                const fromLegacyStorage = !saved;
+
+                if (!saved) {
+                    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+                }
+
+                if (saved && Array.isArray(saved.drafts) && saved.drafts.length) {
+                    state.drafts = saved.drafts.map((draft) => ({
+                        id: draft.id || generateId(),
+                        title: draft.title || extractTitle(draft.code || ''),
+                        titleManual: draft.titleManual === true,
+                        score: normalizeScore(draft.score),
+                        code: draft.code || '',
+                        createdAt: draft.createdAt || draft.updatedAt || Date.now(),
+                        updatedAt: draft.updatedAt || Date.now()
+                    }));
+                    state.currentDraftId = state.drafts.some((draft) => draft.id === saved.currentDraftId)
+                        ? saved.currentDraftId
+                        : state.drafts[0].id;
+                    state.compareDraftId = state.drafts.some((draft) => draft.id === saved.compareDraftId)
+                        ? saved.compareDraftId
+                        : null;
+                    state.compareMode = !!saved.compareMode;
+                    state.editorVisible = saved.editorVisible !== false;
+                    statusText.textContent = fromLegacyStorage ? '已从旧草稿箱迁移到大容量存储' : '已恢复草稿箱';
+                    if (fromLegacyStorage) {
+                        saveState('已迁移旧草稿箱');
+                    }
+                    return;
+                }
+            } catch (error) {
+            }
+
+            const firstDraft = createDraft('');
+            state.drafts = [firstDraft];
+            state.currentDraftId = firstDraft.id;
+            state.compareDraftId = null;
+            state.compareMode = false;
+            state.editorVisible = true;
+            statusText.textContent = '已创建空白草稿箱';
+            saveState('已创建空白草稿箱');
+        }
+
+        function renderSidebarHead() {
+            sidebarHead.textContent = `草稿箱 · ${state.drafts.length}`;
+        }
+
+        function renderDraftList() {
+            draftList.innerHTML = '';
+
+            if (!state.drafts.length) {
+                draftList.innerHTML = '<div class="draft-empty">还没有草稿</div>';
+                return;
+            }
+
+            const groupedDrafts = new Map();
+
+            state.drafts
+                .slice()
+                .sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt))
+                .forEach((draft) => {
+                    const key = formatDateKey(draft.updatedAt || draft.createdAt);
+                    if (!groupedDrafts.has(key)) {
+                        groupedDrafts.set(key, []);
+                    }
+                    groupedDrafts.get(key).push(draft);
+                });
+
+            groupedDrafts.forEach((draftsInGroup, key) => {
+                if (!(key in groupExpanded)) {
+                    groupExpanded[key] = key === getTodayKey();
+                }
+
+                const group = document.createElement('div');
+                const head = document.createElement('div');
+                const label = document.createElement('div');
+                const count = document.createElement('div');
+                const items = document.createElement('div');
+
+                group.className = 'draft-group';
+                head.className = 'draft-group-head';
+                label.className = 'draft-group-label';
+                count.className = 'draft-group-count';
+                items.className = 'draft-group-items';
+
+                label.textContent = `${groupExpanded[key] ? '▼' : '▶'} ${formatGroupLabel(key)}`;
+                count.textContent = `${draftsInGroup.length} 篇`;
+                head.appendChild(label);
+                head.appendChild(count);
+                head.addEventListener('click', () => {
+                    groupExpanded[key] = !groupExpanded[key];
+                    renderDraftList();
+                });
+
+                group.appendChild(head);
+
+                if (groupExpanded[key]) {
+                    draftsInGroup
+                        .slice()
+                        .sort((a, b) => b.updatedAt - a.updatedAt)
+                        .forEach((draft) => {
+                            const item = document.createElement('div');
+                            const top = document.createElement('div');
+                            const title = document.createElement('div');
+                            const deleteButton = document.createElement('button');
+                            const meta = document.createElement('div');
+                            const time = document.createElement('div');
+
+                            item.className = `draft-item${draft.id === state.currentDraftId ? ' active' : ''}`;
+                            top.className = 'draft-item-top';
+                            title.className = 'draft-item-title';
+                            deleteButton.className = 'draft-delete';
+                            deleteButton.type = 'button';
+                            deleteButton.setAttribute('aria-label', '删除草稿');
+                            deleteButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v8h-2V9zm4 0h2v8h-2V9zM7 9h2v8H7V9z"/></svg>';
+                            meta.className = 'draft-item-meta';
+                            time.className = 'draft-item-time';
+
+                            title.textContent = draft.title || '未命名草稿';
+                            time.textContent = formatTime(draft.updatedAt);
+                            meta.appendChild(time);
+
+                            if (draft.score !== null) {
+                                const score = document.createElement('span');
+                                score.className = 'draft-score';
+                                score.textContent = draft.score;
+                                meta.appendChild(score);
+                            }
+
+                            deleteButton.addEventListener('click', (event) => {
+                                event.stopPropagation();
+                                deleteDraft(draft.id);
+                            });
+
+                            top.appendChild(title);
+                            top.appendChild(deleteButton);
+                            item.appendChild(top);
+                            item.appendChild(meta);
+                            item.addEventListener('click', () => {
+                                state.currentDraftId = draft.id;
+                                if (state.compareDraftId === draft.id) {
+                                    state.compareDraftId = null;
+                                }
+                                renderAll();
+                                saveState('已切换草稿');
+                            });
+
+                            items.appendChild(item);
+                        });
+
+                    group.appendChild(items);
+                }
+
+                draftList.appendChild(group);
+            });
+        }
+
+        function deleteDraft(draftId) {
+            const target = state.drafts.find((draft) => draft.id === draftId);
+
+            if (!target) {
+                return;
+            }
+
+            const confirmed = window.confirm(`删除草稿「${target.title || '未命名草稿'}」？`);
+
+            if (!confirmed) {
+                return;
+            }
+
+            state.drafts = state.drafts.filter((draft) => draft.id !== draftId);
+
+            if (!state.drafts.length) {
+                const blankDraft = createDraft('');
+                state.drafts = [blankDraft];
+                state.currentDraftId = blankDraft.id;
+                state.compareDraftId = null;
+            } else {
+                if (state.currentDraftId === draftId) {
+                    state.currentDraftId = state.drafts[0].id;
+                }
+                if (state.compareDraftId === draftId) {
+                    state.compareDraftId = null;
+                }
+            }
+
+            renderAll();
+            saveState('已删除草稿');
+        }
+
+        function renderCompareOptions() {
+            compareDraftSelect.innerHTML = '<option value="">不选择对比稿</option>';
+
+            state.drafts.forEach((draft) => {
+                if (draft.id === state.currentDraftId) {
+                    return;
+                }
+
+                const option = document.createElement('option');
+                option.value = draft.id;
+                option.textContent = draft.score === null ? draft.title : `${draft.title} · ${draft.score}`;
+                option.selected = draft.id === state.compareDraftId;
+                compareDraftSelect.appendChild(option);
+            });
+        }
+
+        function renderMeta() {
+            const current = getCurrentDraft();
+
+            draftTitleInput.value = current?.title || '';
+            draftScoreInput.value = current?.score === null ? '' : current.score;
+            compareField.classList.toggle('hidden', !state.compareMode);
+            compareToggleBtn.textContent = state.compareMode ? '退出对比' : '对比';
+            editorToggleBtn.textContent = state.editorVisible ? '隐藏源码' : '显示源码';
+            document.body.classList.toggle('editor-hidden', !state.editorVisible);
+            renderCompareOptions();
+        }
+
+        function renderPreview() {
+            const current = getCurrentDraft();
+            const compare = state.compareMode ? getCompareDraft() : null;
+            const currentCode = current?.code?.trim() ? current.code : EMPTY_PREVIEW_HTML;
+            const compareCode = compare?.code?.trim() ? compare.code : EMPTY_PREVIEW_HTML;
+            const showCompare = !!compare;
+
+            codeInput.value = current?.code || '';
+            previewFrame.srcdoc = currentCode;
+            compareFrame.srcdoc = compareCode;
+            previewGrid.classList.toggle('single', !showCompare);
+            comparePane.classList.toggle('hidden', !showCompare);
+            currentFrameLabel.textContent = `当前稿 · ${current?.title || '未命名草稿'}`;
+            compareFrameLabel.textContent = compare ? `对比稿 · ${compare.title}` : '对比稿';
+            previewStatus.textContent = `当前约 ${getTextLength(current?.code || '')} 字`;
+            compareStatus.textContent = showCompare ? '对比已开启' : (state.compareMode ? '请选择一篇对比稿' : '未开启对比');
+        }
+
+        function renderAll() {
+            renderSidebarHead();
+            renderDraftList();
+            renderMeta();
+            renderPreview();
+        }
+
+        function syncCurrentDraft() {
+            const current = getCurrentDraft();
+
+            if (!current) {
+                return;
+            }
+
+            current.code = codeInput.value;
+            if (!current.titleManual) {
+                current.title = extractTitle(codeInput.value);
+                draftTitleInput.value = current.title;
+            }
+            current.score = normalizeScore(draftScoreInput.value);
+            current.updatedAt = Date.now();
+            renderDraftList();
+            renderPreview();
+            scheduleSave('草稿已自动保存');
+        }
+
+        function addNewDraft(draft, saveMessage) {
+            state.drafts.unshift(draft);
+            state.currentDraftId = draft.id;
+            if (state.compareDraftId === draft.id) {
+                state.compareDraftId = null;
+            }
+            renderAll();
+            codeInput.focus();
+            saveState(saveMessage);
+        }
+
+        function createBlankDraft() {
+            const draft = createDraft('');
+            addNewDraft(draft, '已新建空稿');
+        }
+
+        async function createDraftFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                const draft = createDraft(text.trim() ? text : '');
+                addNewDraft(draft, text.trim() ? '已从剪贴板创建新稿' : '剪贴板为空，已新建空稿');
+            } catch (error) {
+                createBlankDraft();
+            }
+        }
+
+        async function copyCurrentDraft() {
+            const current = getCurrentDraft();
+
+            if (!current || !current.code.trim()) {
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(current.code);
+                statusText.textContent = '已复制当前稿';
+            } catch (error) {
+                statusText.textContent = '复制失败，请手动复制';
+            }
+        }
+
+        async function exportCurrentDraft() {
+            syncCurrentDraft();
+            const current = getCurrentDraft();
+
+            if (!current || !current.code.trim()) {
+                return;
+            }
+
+            if (!supportsFileSystemAccess()) {
+                downloadCurrentDraft(current);
+                statusText.textContent = '当前浏览器不支持固定导出目录，已下载到默认下载目录';
+                return;
+            }
+
+            try {
+                await exportToProjectFolder(current);
+            } catch (error) {
+                if (error && error.name === 'AbortError') {
+                    statusText.textContent = '已取消选择导出目录';
+                    return;
+                }
+
+                try {
+                    await clearStoredExportDirectoryHandle();
+                } catch (clearError) {
+                }
+
+                downloadCurrentDraft(current);
+                statusText.textContent = '目录导出失败，已回退为浏览器下载';
+            }
+        }
+
+        function toggleEditor() {
+            state.editorVisible = !state.editorVisible;
+            renderMeta();
+            saveState(state.editorVisible ? '已显示源码' : '已隐藏源码');
+        }
+
+        function toggleCompareMode() {
+            state.compareMode = !state.compareMode;
+
+            if (!state.compareMode) {
+                state.compareDraftId = null;
+            } else if (!state.compareDraftId) {
+                const firstOther = state.drafts.find((draft) => draft.id !== state.currentDraftId);
+                state.compareDraftId = firstOther ? firstOther.id : null;
+            }
+
+            renderAll();
+            saveState(state.compareMode ? '已开启对比' : '已退出对比');
+        }
+
+        draftTitleInput.addEventListener('input', () => {
+            const current = getCurrentDraft();
+
+            if (!current) {
+                return;
+            }
+
+            const value = draftTitleInput.value.trim();
+            current.titleManual = value !== '';
+            current.title = value || extractTitle(current.code);
+            current.updatedAt = Date.now();
+            renderDraftList();
+            renderPreview();
+            scheduleSave('标题已自动保存');
         });
 
-        // 初始化
-        runCode();
+        draftScoreInput.addEventListener('input', syncCurrentDraft);
+        compareDraftSelect.addEventListener('change', () => {
+            state.compareDraftId = compareDraftSelect.value || null;
+            renderPreview();
+            saveState(state.compareDraftId ? '已切换对比稿' : '已清空对比稿');
+        });
+
+        codeInput.addEventListener('input', () => {
+            clearTimeout(state.saveTimer);
+            state.saveTimer = setTimeout(syncCurrentDraft, 250);
+        });
+
+        document.addEventListener('keydown', (event) => {
+            const isSave = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's';
+
+            if (!isSave) {
+                return;
+            }
+
+            event.preventDefault();
+            clearTimeout(state.saveTimer); // 清除挂起的自动保存，避免覆盖手动保存提示
+            syncCurrentDraft();
+            saveState('已手动保存');
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (state.saveTimer) {
+                clearTimeout(state.saveTimer);
+                try {
+                    const current = getCurrentDraft();
+                    if (current) {
+                        current.code = codeInput.value;
+                        if (!current.titleManual) {
+                            current.title = extractTitle(codeInput.value);
+                        }
+                        current.score = normalizeScore(draftScoreInput.value);
+                        current.updatedAt = Date.now();
+                    }
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(getPersistableState()));
+                } catch (e) {
+                    // 忽略写入失败
+                }
+            }
+        });
+
+        (async function init() {
+            await loadState();
+            renderAll();
+        })();
     </script>
 </body>
 </html>
